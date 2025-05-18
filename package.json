@@ -2,8 +2,8 @@
     "name": "project-templates",
     "displayName": "Project Templates",
     "description": "Create and apply custom projects templates",
-    "version": "1.2.0",
-    "author": "C. Antonio Sánchez",
+    "version": "1.3.0",
+    "author": "C. Antonio S. (and Novan)",
     "publisher": "cantonios",
     "icon": "icon.png",
     "homepage": "https://github.com/cantonios/vscode-project-templates",
@@ -94,6 +94,13 @@
                     "when": "explorerResourceIsFolder",
                     "group": "projectTemplates@2"
                 }
+            ],
+            "welcome": [
+                {
+                    "command": "extension.createProjectFromTemplate",
+                    "group": "start",
+                    "when": "true"
+                }
             ]
         }
     },
@@ -105,10 +112,12 @@
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^8.10.25",
+        "@types/mocha": "^2.2.48",
+        "@types/node": "^8.10.66",
+        "mocha": "^11.3.0",
         "tslint": "^5.8.0",
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.21"
+        "typescript": "^5.8.3",
+        "vsce": "^2.15.0",
+        "vscode": "^1.1.37"
     }
 }

@@ -77,7 +77,7 @@ export default class ProjectTemplatesPlugin {
         let templates: string[] = fs.readdirSync(templateDir).map( function (item) {
 			// ignore hidden folders
             if (!/^\./.exec(item)) {
-                return fs.statSync(path.join(templateDir, item)).isDirectory ? item : null;
+                return fs.statSync(path.join(templateDir, item)).isDirectory() ? item : null;
             }
             return null;
         }).filter(function (filename) {
@@ -138,7 +138,7 @@ export default class ProjectTemplatesPlugin {
 
             // extract from log path
             userDataDir = this.econtext.logPath;
-            let gggparent = path.dirname(path.dirname(path.dirname(path.dirname(userDataDir))));
+            let gggparent = path.dirname(path.dirname(path.dirname(path.dirname(path.dirname(userDataDir)))));
             userDataDir = path.join(gggparent, 'User', 'ProjectTemplates');
         } else {
             // get parent of parent of parent to remove workspaceStorage/<UID>/<extension>
@@ -150,24 +150,24 @@ export default class ProjectTemplatesPlugin {
         return userDataDir;
     }
 
-    /**
-     * Creates the templates directory if it does not exists
-	 * @throws Error
-     */
-    public async createTemplatesDirIfNotExists() {
-		let templatesDir = await this.getTemplatesDir();
-		
-		if (templatesDir && !fs.existsSync(templatesDir)) {
-			try {
-                fsutils.mkdirsSync(templatesDir, 0o775);
-				fs.mkdirSync(templatesDir);
-			} catch (err) {
-				if (err.code !== 'EEXIST') {
-					throw err;
-				}
-			}
-		}
-    }
+        /**
+         * Creates the templates directory if it does not exists
+         * @throws Error
+         */
+        public async createTemplatesDirIfNotExists() {
+            let templatesDir = await this.getTemplatesDir();
+            
+            if (templatesDir && !fs.existsSync(templatesDir)) {
+                try {
+                    fsutils.mkdirsSync(templatesDir, 0o775);
+                    fs.mkdirSync(templatesDir);
+                } catch (err) {
+                    if (err && typeof err === 'object' && 'code' in err && (err as any).code !== 'EEXIST') {
+                        throw err;
+                    }
+                }
+            }
+        }
 
     /**
      * Chooses a template from the set of templates available in the root 

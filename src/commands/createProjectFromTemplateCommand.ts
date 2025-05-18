@@ -1,6 +1,8 @@
 'use strict';
 
 import vscode = require("vscode");
+import fs = require("fs");
+import path = require("path");
 
 import ProjectTemplatesPlugin from "../projectTemplatesPlugin";
 
@@ -12,27 +14,69 @@ import ProjectTemplatesPlugin from "../projectTemplatesPlugin";
  * @param {*} args
  */
 export async function run(templateManager: ProjectTemplatesPlugin, args: any) {
-
-    // get workspace folder
     let workspace = await templateManager.selectWorkspace(args);
+    let workspacePath: string;
+    let openedNewFolder = false;
+
     if (!workspace) {
-        vscode.window.showErrorMessage("No workspace selected");
-        return;
+        // Prompt for new folder name
+        const folderName = await vscode.window.showInputBox({
+            prompt: "Enter name for new project",
+            placeHolder: "my-project",
+            validateInput: value => value.trim() === "" ? "Folder name cannot be empty" : null
+        });
+
+        if (!folderName) {
+            vscode.window.showErrorMessage("Project creation canceled.");
+            return;
+        }
+
+        // Determine base path from home directory or workspace
+        const homeDir = process.env.HOME ?? process.env.USERPROFILE;
+        if (!homeDir) {
+            vscode.window.showErrorMessage("Unable to determine your home directory.");
+            return;
+        }
+
+        const basePath = path.join(homeDir, "Projects");
+
+        // Ensure ~/Projects exists
+        if (!fs.existsSync(basePath)) {
+            workspacePath = path.join(homeDir, folderName);
+        } else {
+            workspacePath = path.join(basePath, folderName);
+        }
+
+        try {
+            if (!fs.existsSync(workspacePath)) {
+                fs.mkdirSync(workspacePath);
+                openedNewFolder = true;
+            }
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to create folder: ${err.message}`);
+            return;
+        }
+
+    } else {
+        workspacePath = workspace;
     }
 
-    // load latest configuration
+    // Load latest configuration
     templateManager.updateConfiguration(vscode.workspace.getConfiguration('projectTemplates'));
 
-    // create project
-    templateManager.createFromTemplate(workspace).then(
-        (template : string | undefined) => {
-            if (template) {
-                vscode.window.showInformationMessage("Created project from template '" + template + "'");
-            }
-        },
-        (reason: any) => {
-            vscode.window.showErrorMessage("Failed to create project from template: " + reason);
-        }
-    );
+    // Create the project
+    try {
+        const template = await templateManager.createFromTemplate(workspacePath);
+        if (template) {
+            vscode.window.showInformationMessage(`Created project from template '${template}'`);
 
+            // Open the new folder if it was created
+            if (openedNewFolder) {
+                const openUri = vscode.Uri.file(workspacePath);
+                vscode.commands.executeCommand('vscode.openFolder', openUri, false); // false = open in existing window
+            }
+        }
+    } catch (reason: any) {
+        vscode.window.showErrorMessage(`Failed to create project from template: ${reason}`);
+    }
 }
