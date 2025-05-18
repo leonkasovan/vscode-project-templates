@@ -18,6 +18,10 @@ export async function run(templateManager: ProjectTemplatesPlugin, args: any) {
     let workspacePath: string;
     let openedNewFolder = false;
 
+    // Load latest configuration
+    const config = vscode.workspace.getConfiguration('projectTemplates');
+    templateManager.updateConfiguration(config);
+
     if (!workspace) {
         // Prompt for new folder name
         const folderName = await vscode.window.showInputBox({
@@ -31,20 +35,28 @@ export async function run(templateManager: ProjectTemplatesPlugin, args: any) {
             return;
         }
 
-        // Determine base path from home directory or workspace
+        // Determine base path
+        const configuredProjectsDir = config.get<string>('projectsDirectory');
         const homeDir = process.env.HOME ?? process.env.USERPROFILE;
         if (!homeDir) {
             vscode.window.showErrorMessage("Unable to determine your home directory.");
             return;
         }
 
-        const basePath = path.join(homeDir, "Projects");
+        let basePath: string;
 
-        // Ensure ~/Projects exists
-        if (!fs.existsSync(basePath)) {
-            workspacePath = path.join(homeDir, folderName);
-        } else {
+        if (configuredProjectsDir && configuredProjectsDir.trim() !== "") {
+            basePath = configuredProjectsDir;
             workspacePath = path.join(basePath, folderName);
+        } else {
+            basePath = path.join(homeDir, "Projects");
+
+            // Ensure ~/Projects exists
+            if (!fs.existsSync(basePath)) {
+                workspacePath = path.join(homeDir, folderName);
+            } else {
+                workspacePath = path.join(basePath, folderName);
+            }
         }
 
         try {
